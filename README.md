@@ -1,2 +1,14 @@
-# cursorrules (Work in Progress!)
-Community collection of Cursor rules for working with Temporal and the Cursor AI code generator
+# AI Coding IDE Rulesets (Work in Progress!)
+Community collection of AI powered IDE coding rules for generating Temporal applications
+
+## Current Rulesets
+
+* [Cursor](cursor/README.md)
+* [GitHub Copilot](copilot/README.md)
+* [Windsurf](windsurf/README.md)
+
+## Contributing
+
+Want to add rules for a tool? 
+Expand on a current ruleset?
+
