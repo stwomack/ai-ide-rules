@@ -11,4 +11,6 @@ Community collection of AI powered IDE coding rules for generating Temporal appl
 
 Want to add rules for a tool? 
 Expand on a current ruleset?
+Add rules for an IDE we don't have!
 
+Submit a PR! All PRs welcome!

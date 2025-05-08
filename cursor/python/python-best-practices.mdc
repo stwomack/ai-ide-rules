@@ -1,9 +1,4 @@
 ---
-description: 
-globs: 
-alwaysApply: false
----
----
 description: Python Best Practices
 globs: *
 alwaysApply: false
@@ -23,6 +18,8 @@ alwaysApply: false
 ## Package Management
 
 - Use `uv` for all package management and virtual environment management
+- Create a valid `pyproject.toml` file that works with `uv`
+- Do not create the lock file. This should be done when running `uv`.
 
 
 ## Documentation Standards

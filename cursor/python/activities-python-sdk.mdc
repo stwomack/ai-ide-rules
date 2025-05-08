@@ -1,9 +1,4 @@
 ---
-description: 
-globs: 
-alwaysApply: false
----
----
 description: Python Best Practices
 globs: *.py
 alwaysApply: true
