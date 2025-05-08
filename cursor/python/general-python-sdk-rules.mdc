@@ -1,9 +1,4 @@
 ---
-description: 
-globs: 
-alwaysApply: false
----
----
 description: Generic rules for Temporal Python SDK
 globs: *.py
 alwaysApply: true
