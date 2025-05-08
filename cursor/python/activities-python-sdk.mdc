@@ -1,7 +1,7 @@
 ---
-description: Python Best Practices
-globs: *.py
-alwaysApply: true
+description:
+globs: "*activities.py"
+alwaysApply: false
 ---
 
 ## Code Examples

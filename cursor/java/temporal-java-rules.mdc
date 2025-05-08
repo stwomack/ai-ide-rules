@@ -1,0 +1,121 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+You are an expert in Temporal Workflow Java SDK. You are also an expert in Java, Spring Boot, and Gradle.
+
+## Code Style and Structure
+
+- Write clean, efficient, and well-documented Java code following Temporal best practices.
+- Use clear separation between workflows and activities.
+- Follow event-driven architecture principles for workflow design.
+- Use descriptive method and variable names following camelCase convention.
+- Structure Temporal applications into workflow interfaces, workflow implementations, activity interfaces, and activity implementations.
+    - Write .gitignore file to exclude all files in the src/main/resources/application.properties file from version control.    
+
+## Temporal SDK Specifics
+- Define workflow interfaces using @WorkflowInterface.
+- Implement workflow methods with @WorkflowMethod and signal/query methods using @SignalMethod and @QueryMethod.
+- Define activity interfaces with @ActivityInterface and register activity implementations using an ActivityStub or Worker.
+- Use @LocalActivity when activities require low latency and don't need global retries.
+
+## Deterministic Workflow Execution
+
+- Workflows must be deterministic to ensure correct replay behavior.
+- Avoid using:
+    - Non-deterministic functions like System.currentTimeMillis(), UUID.randomUUID(), or random generators directly inside workflows.
+    - Blocking I/O operations such as database queries or network calls inside workflows.
+    - Static variables or singleton states that mutate across executions.
+- Instead, use:
+    - Workflow.currentTimeMillis() for time-based operations.
+    - Workflow.randomUUID() for UUID generation.
+    - Activities for any I/O or external system interactions.
+
+## Splitting Logic: Workflows vs. Activities
+
+- Workflows manage business logic, coordination
+- Activities handle side effects such as database updates, API calls, or file I/O. They are retried by default according to the retry policy configured in the ActivityOptions.
+- Guidelines:
+    - Keep workflows lightweight; delegate all external interactions to activities.
+    - Ensure activities fail fast to allow workflow retries.
+    - Use async activities (Async.function or Promise) for parallel execution.
+        - Use value classes for data transfer between activities and workflows.
+    
+## Workflows
+    - Use Workflow.getInfo() to get information about the workflow execution.
+    - Use WorkflowInfo.isContinueAsNewSuggested() to check if the workflow should be continued as new.
+    - Use Workflow.isEveryHandlerFinished() to check if the workflow has finished all its handlers. This is needed to ensure that all signal and update handlers completed.
+    - Use Workflow.await to wait for a workflow state change from an event like a signal.
+    - Activities are retried by the temporal service according to the retry policy configured in the ActivityOptions. Workflow is notified about the activity failure only after it exhausted all the retries.
+        - Don't retry them from the workflow code.
+    - Workflow have limited size. If they have to loop for a long time they have to call continueAsNew. The full state of the workflow has to be passed
+    as a parameter to the continueAsNew method. ContinueAsNew cannot be called if any of the activities are still running. 
+
+## Activities
+
+    - Use Activity.getExecutionContext().recordHeartbeat(String details) to record heartbeat details.
+    - When an activity is retried the details form previous attempt can be retrieved using Activity.getExecutionContext().getHeartbeatDetails()
+    - HeartbeatTimeout should be set in WorkflowOptions if an activity heartbeats.
+    - Long running activities must heartbeat regularly.
+    - Include as much details from an external API call result into the ApplicationFailure as possible. Consider using the response body as a details parameter if the response can be serialized to JSON using Jackson.
+
+## Retry Options
+
+    - Don't specify retry options unless their default values are overridden. Specify only overridden values.
+
+## Naming Conventions
+
+ - Use PascalCase for class names (e.g., OrderWorkflow, PaymentActivity).
+ - Use camelCase for methods and variables (e.g., processOrder, validatePayment).
+ - Use ALL_CAPS for constants (e.g., MAX_RETRY_ATTEMPTS).
+
+## Error Handling
+
+ - Use Temporal's error handling mechanisms. 
+    - Use ApplicationFailure.newFailure(String message, String type, Object... details))to pass application specific details from activities to workflows, 
+    - Use a single details field. Create a value class if the details are more complex.
+    from child workflows to parent workflows. And from workflows to clients.
+    - Throw ApplicationFailure.newNonRetryableFailure to indicate that activity should not be retried.
+    - Activity and workflow methods should not throw checked exceptions.
+    - Use Activity.wrap to rethrow a checked exception as an unchecked ApplicationFailure inside an activity.
+    - Use Workflow.wrap to rethrow a checked exception as an unchecked ApplicationFailure inside a workflow.
+    - An activity invocation from a workflow throws an ActivityFailure that contains the original exception (converted to ApplicationFailure) or an appropriate timeout exception as its cause.
+    - An activity invocation from a workflow throws an ActivityFailure that contains the original exception (converted to ApplicationFailure) as its cause.
+    - A child workflow invocation from a workflow throws ChildWorkflowFailure that contains the original exception (converted to ApplicationFailure) or an appropriate timeout exception as its cause.
+
+## Testing
+
+ - Use JUnit 5 with Temporal's TestWorkflowEnvironment for unit testing workflows.
+ - Use JUnit 5 with Temporal's TestActivityEnvironment for unit testing activities.
+ - Mock activities with Mockito to avoid real side effects in tests.
+ - Use TestWorkflowRule to simplify Temporal test setups.
+
+## Performance and Scalability
+
+ - Implement retry policies on activities for transient failures.
+ - Optimize for high-throughput by configuring worker thread pools and queue capacities.
+
+## Security
+
+ - Use WorkflowClientOptions to configure TLS when connecting to Temporal Cloud.
+ - Ensure sensitive data is encrypted before passing it as workflow input.
+
+## Logging and Monitoring
+
+ - Use Workflow.getLogger() inside workflows for deterministic logging.
+ - Use Temporal visibility APIs for workflow and activity monitoring.
+
+## API Documentation
+
+ - Document workflow and activity methods clearly.
+ - Include retry behavior, expected inputs/outputs, and failure handling.
+
+## Build and Deployment
+
+ - Use Gradle for dependency management and builds.
+ - Deploy workers as stateless services for scalability.
+    - Don't include workers into the workflow starter application. Generate a separate worker application.
+ - Use Docker to containerize workers if needed.
+    - Use temporal CLI (called temporal and installed using brew) to terminate workflows.

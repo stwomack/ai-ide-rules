@@ -1,22 +1,94 @@
 ---
-description: Python Best Practices
-globs: *.py
-alwaysApply: true
+description:
+globs: "*workflow.py"
+alwaysApply: false
 ---
 
-## Code Examples
+## Defining a Workflow
+
+- A Workflow should be implemented as a class.
+- The class should be decorated with the `@workflow.defn` decorator.
+- The method designated as the entry point should be decorated with the `@workflow.run` decorator, and be async.
+- There can only be one entry point per Workflow class.
+- There should only be one Workflow class per file.
+- Workflow code must be deterministic.
+    - All non-deterministic code should be implemented in an Activity.
 
 ### Workflow Example
 ```python
 from temporalio import workflow
 
 @workflow.defn
-class ProcessOrderWorkflow:
+class GreetingWorkflow:
     """Workflow to process customer orders."""
 
     @workflow.run
-    async def run(self, order_id: str):
-        await workflow.execute_activity(
-            "send_email_activity", order_id, start_to_close_timeout=timedelta(seconds=30)
-        )
+    async def run(self, name: str) -> str:
+        
+        return f"Hello {name}!"
 ```
+
+## Asyncio and a Custom Event Loop
+
+- Temporal implemented a custom asyncio event loop. 
+- Most `asyncio` action you can perform within a Workflow will use this event loop and is safe to do within Temporal.
+- Certain `asyncio` features are disabled
+    - Thread related calls such as `to_thread()`, `run_coroutine_threadsafe()`, `loop.run_in_executor()`, etc
+    - Calls that alter the event loop such as `loop.close()`, `loop.stop()`, `loop.run_forever()`, `loop.set_task_factory()`, etc
+    - Calls that use anything external such as networking, subprocesses, disk IO, etc
+- `asyncio` utilities that internally use `set()` can make them non-deterministic from one Worker to the next. Therefore the following `asyncio` function have `workflow`-module alternatives that are deterministic
+    - `asyncio.as_completed()` - use `workflow.as_completed()` 
+    - `asyncio.wait()` - use `workflow.wait()`
+
+## Timers
+
+- Timers are durable in Temporal, meaning you can set a timer for a long period of time and expect it to fire successfully
+- The `workflow.sleep` call from the Temporal Python SDK is a wrapper around `asyncio.sleep`, accepts a timedelta for the duration, and allows a keyword argument summary to be provided as metadata.
+
+### Timer Example
+
+```python
+from temporalio import workflow
+from datetime import timedelta
+
+
+@workflow.defn
+class GreetSomeone:
+    """Workflow to process customer orders."""
+
+    @workflow.run
+    async def run(self, name: str) -> str:
+        # The below Workflow code will sleep for 1 day and print 'Hello <NAME>'
+        # with the name that is passed in
+
+        await workflow.sleep(timedelta(days=1), summary="Sleep for one day")
+        return f"Hello {name}!"
+```
+
+
+## Handling Long Running Workflows with ContinueAsNew
+
+- Temporal Workflow Event Histories have a limit on the size and number of events allowed
+    - Warnings begin to appear at 10k events, and a Workflow will be terminated at 50k events
+- Use the `workflow.continue_as_new()` method to close the current Workflow Execution, and start a new one with a new Event History, continuing from where it currently was.
+
+
+### ContinueAsNew Example
+
+```python
+from temporalio import workflow
+from temporalio.client import Client
+from temporalio.worker import Worker
+
+
+@workflow.defn
+class LoopingWorkflow:
+    @workflow.run
+    async def run(self, iteration: int) -> None:
+        if iteration == 10:
+            return
+        workflow.logger.info("Running workflow iteration %s", iteration)
+        await asyncio.sleep(1)
+        workflow.continue_as_new(iteration + 1)
+```
+

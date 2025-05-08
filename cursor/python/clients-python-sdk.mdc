@@ -1,0 +1,5 @@
+---
+description: Rules for code that uses a Temporal client to start a Workflow execution
+globs: 
+alwaysApply: false
+---
