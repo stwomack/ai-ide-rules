@@ -1,0 +1,27 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Python Best Practices
+globs: *.py
+alwaysApply: true
+---
+
+## Code Examples
+
+### Activity Example
+```python
+from temporalio import activity
+
+@activity.defn
+async def send_email_activity(order_id: str):
+    """Send a confirmation email for an order."""
+    try:
+        # Simulate sending email
+        pass
+    except Exception as e:
+        activity.logger.error(f"Failed to send email for order {order_id}: {str(e)}")
+        raise
+```

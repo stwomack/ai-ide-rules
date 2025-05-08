@@ -1,0 +1,27 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Python Best Practices
+globs: *.py
+alwaysApply: true
+---
+
+## Code Examples
+
+### Workflow Example
+```python
+from temporalio import workflow
+
+@workflow.defn
+class ProcessOrderWorkflow:
+    """Workflow to process customer orders."""
+
+    @workflow.run
+    async def run(self, order_id: str):
+        await workflow.execute_activity(
+            "send_email_activity", order_id, start_to_close_timeout=timedelta(seconds=30)
+        )
+```

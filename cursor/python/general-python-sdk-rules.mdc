@@ -1,0 +1,42 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Generic rules for Temporal Python SDK
+globs: *.py
+alwaysApply: true
+---
+
+## Overview
+
+Temporal’s Python SDK lets you author **Workflows** and **Activities** in pure Python while Temporal Server provides fault‑tolerant orchestration. This document provides generic rules to be applied when creating _any_ Temporal application. Other rules files will be specified around Temporal specific freatures.
+
+## File Structure
+
+- Code for a Workflow, Activities, and Workers should be organized in separate files. 
+    - For simplicity sake, name them `workflow.py`, `activities.py`, and `worker.py` by defeault.
+- Name workflows with a `_workflow` suffix (e.g., `process_order_workflow`).
+- Name activities with an `_activity` suffix (e.g., `send_email_activity`).
+
+## Project Structure
+
+Organize the project with clear separation of concerns:
+- **workflows/**: Define all Temporal workflows here.
+- **activities/**: Implement all activity definitions.
+- **tests/**: Place unit tests and integration tests in this directory.
+- **utils/**: Include reusable utilities and helpers.
+
+## Dependencies
+
+- Ensure `temporalio` is listed in dependencies.
+- Avoid usage of `celery` or any conflicting task queue systems.
+
+## Sandbox Environment Environment
+
+Temporal’s workflow sandbox isolates global state and intercepts known non‑deterministic calls.
+**Benefits** – Catches non‑determinism early; allows pass‑through of safe modules for performance.
+**How it works** – Uses `exec` to import workflow files into an isolated module graph and applies runtime proxies to restrict dangerous stdlib APIs.
+**Pass‑through modules** – Mark deterministic third‑party libs (e.g., `pydantic`) via `with workflow.unsafe.imports_passed_through()` or Worker restrictions to avoid repeated imports.
+**Skipping** – For rare cases, wrap code in `workflow.unsafe.sandbox_unrestricted()` or set `sandboxed=False` on `@workflow.defn`; document the rationale as sandbox checks are lost.

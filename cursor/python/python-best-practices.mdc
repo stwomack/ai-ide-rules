@@ -1,0 +1,51 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Python Best Practices
+globs: *
+alwaysApply: false
+---
+
+## General Principles
+- Write concise, readable Python code.
+- Follow PEP 8 and PEP 257 for style and documentation.
+- Use Python type hints in all functions and methods.
+- Document all workflows and activities using descriptive docstrings.
+
+## Naming Conventions
+- **Variables and Functions**: snake_case
+- **Classes**: PascalCase
+- **Files**: snake_case
+
+## Package Management
+
+- Use `uv` for all package management and virtual environment management
+
+
+## Documentation Standards
+
+- Use Python docstrings for all workflows and activities:
+  ```python
+  @workflow.defn
+  class ProcessOrderWorkflow:
+      """Workflow for processing an order."""
+  ```
+- Add in-line comments explaining complex segments of code
+
+## Testing Standards
+
+- Write tests for all workflows and activities using `pytest`.
+- Maintain at least 80% code coverage.
+
+## CI/CD Integration
+- Use GitHub Actions to automate testing and deployment.
+- When possible, consolidate tooling. Use as few tools as possible
+- Use tools from astral.sh (like ruff, uv) whenever possible
+- Include the following checks:
+  - Linting with `ruff`.
+  - Type checking with `mypy`.
+  - Unit testing with `pytest`.
+
