@@ -14,6 +14,8 @@ alwaysApply: false
 - Workflow code must be deterministic.
     - All non-deterministic code should be implemented in an Activity.
 
+## Input and Output from Workflow and Activities
+
 ### Workflow Example
 ```python
 from temporalio import workflow
@@ -71,24 +73,113 @@ class GreetSomeone:
 - Temporal Workflow Event Histories have a limit on the size and number of events allowed
     - Warnings begin to appear at 10k events, and a Workflow will be terminated at 50k events
 - Use the `workflow.continue_as_new()` method to close the current Workflow Execution, and start a new one with a new Event History, continuing from where it currently was.
+- Workflows don't need to calculate the Event History, they can use the `worfklow.is_continue_as_new_suggested()` method to determine when to continue as new
 
 
 ### ContinueAsNew Example
 
 ```python
 from temporalio import workflow
-from temporalio.client import Client
-from temporalio.worker import Worker
+from datetime import timedelta
 
 
 @workflow.defn
-class LoopingWorkflow:
+class GreetSomeone:
+    """Workflow that counts to 1,000,000, continuing as new when necessary"""
+
     @workflow.run
-    async def run(self, iteration: int) -> None:
-        if iteration == 10:
-            return
-        workflow.logger.info("Running workflow iteration %s", iteration)
-        await asyncio.sleep(1)
-        workflow.continue_as_new(iteration + 1)
+    async def run(self, count: int) -> str:
+
+        x = count
+        while x < 100000:
+            x += 1
+            print(x)
+            await workflow.sleep(timedelta(seconds=1), summary="Sleep for one second")
+
+            if workflow.info().is_continue_as_new_suggested():
+                workflow.continue_as_new(x)
+
+        return f"Done"
 ```
 
+## Testing
+
+- Use `pytest` for testing
+- Use the `WorkflowEnvironment` class for running Workflow code. This will start a Temporal service to test against
+- In the `WorkflowEnvironment` other features will work differently too, such as Timers having the ability to skip time
+- Decorate Workflow tests with `@pytest.mark.asyncio` so they can be tested properly async
+- Workflow test names should follow the format f"test{workflow_name}_{thing_to_be_tested}.py"
+    - Example. If a Workflow is named `sum_of_squares_workflow.py`, the test should be named `test_sum_of_squares_workflow_positive_input.py`
+
+### Testing Example
+
+```python
+import pytest
+from temporalio.testing import WorkflowEnvironment
+from temporalio.worker import Worker
+from workflow import SumOfSquaresWorkflow
+from activities import SquareActivities
+
+@pytest.mark.asyncio
+async def test_sum_of_squares_positive():
+    async with await WorkflowEnvironment.start_time_skipping() as env:
+        activities = SquareActivities()
+        async with Worker(
+            env.client,
+            task_queue="test-math-queue",
+            workflows=[SumOfSquaresWorkflow],
+            activities=[activities.square],
+        ):
+            result = await env.client.execute_workflow(
+                SumOfSquaresWorkflow.calculate_sum_of_squares,
+                5,
+                6,
+                id="test-sum-of-squares",
+                task_queue="test-math-queue",
+            )
+
+            assert 61 == result
+```
+
+## Replay Testing
+
+- All Workflows should implement Replay Testing to detect non-deterministic changes to the code as the code is updated
+- The Event History from a previously successful closed execution should be downloaded and provided to the test to run against
+- Name the test f"test_{workflow_name}_replay.py"
+
+### Retrieving the Event History using the Python SDK Example
+
+```python
+from temporalio.client import Client, WorkflowHistory
+
+async def get_workflow_histories(my_client: Client):
+    workflow_history = await my_client.list_workflows("WorkflowType = 'ExampleWorkflow'").map_histories()
+```
+
+### Retrieving the Event History using the Temporal Client
+
+```bash
+temporal workflow show \
+ --workflow-id Your-Custom-Workflow-Id \
+ --fields long \
+ --output json > workflow_output.json
+```
+
+### Replay Testing Example
+
+```python
+import pytest
+from temporalio.client import WorkflowHistory
+from temporalio.worker import Replayer
+from workflow import LoanProcessingWorkflow
+
+
+@pytest.mark.asyncio
+async def test_successful_replay():
+    with open("tests/history_for_original_execution.json", "r") as fh:
+        history = fh.read()
+    replayer = Replayer(workflows=[LoanProcessingWorkflow])
+    await replayer.replay_workflow(
+        WorkflowHistory.from_json("loan-processing-workflow-customer-a100", history)
+    )
+```

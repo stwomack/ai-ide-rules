@@ -1,6 +1,0 @@
-## Testing
-
-  "workflows": {
-    "structure": "Define one class per workflow; keep run() concise and delegate heavy logic to activities.",
-    "continuations": "Use continue_as_new() for infinite or large‑history workflows (>50 k events)."
-  },

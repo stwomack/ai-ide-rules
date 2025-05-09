@@ -20,9 +20,8 @@ Organize the project with clear separation of concerns:
 ## File Structure
 
 - Code for a Workflow, Activities, and Workers should be organized in separate files. 
-    - For simplicity sake, name them `workflow.py`, `activities.py`, and `worker.py` by defeault.
-- Name workflows with a `_workflow` suffix (e.g., `process_order_workflow`).
-- Name activities with an `_activity` suffix (e.g., `send_email_activity`).
+- Name workflow files with a `_workflow` suffix (e.g., `process_order_workflow`).
+- Name activities files with an `_activity` suffix (e.g., `send_email_activity`).
 
 ## Task Queues
 
@@ -70,6 +69,7 @@ Temporal’s workflow sandbox isolates global state and intercepts known non‑d
 ## Testing Standards
 
 - Write tests for all workflows and activities using `pytest`.
+- Be sure to include `pytest-asyncio` for testing async python code
 - Maintain at least 80% code coverage.
 
 ## CI/CD Integration
