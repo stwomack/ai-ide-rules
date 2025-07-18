@@ -20,6 +20,7 @@ You are an expert in Temporal Workflow Java SDK. You are also an expert in Java,
 - Implement workflow methods with @WorkflowMethod and signal/query methods using @SignalMethod and @QueryMethod.
 - Define activity interfaces with @ActivityInterface and register activity implementations using an ActivityStub or Worker.
 - Use @LocalActivity when activities require low latency and don't need global retries.
+- Use SpringBoot Config classes and SprigBoot dependency injection wherever possible and appropriate
 
 ## Deterministic Workflow Execution
 
@@ -105,16 +106,12 @@ You are an expert in Temporal Workflow Java SDK. You are also an expert in Java,
 ## Logging and Monitoring
 
  - Use Workflow.getLogger() inside workflows for deterministic logging.
+ - Log liberally for help in troubleshooting
  - Use Temporal visibility APIs for workflow and activity monitoring.
-
-## API Documentation
-
- - Document workflow and activity methods clearly.
- - Include retry behavior, expected inputs/outputs, and failure handling.
 
 ## Build and Deployment
 
- - Use Gradle for dependency management and builds.
+ - Use Maven for dependency management and builds.
  - Deploy workers as stateless services for scalability.
     - Don't include workers into the workflow starter application. Generate a separate worker application.
  - Use Docker to containerize workers if needed.
